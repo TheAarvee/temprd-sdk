@@ -1,0 +1,53 @@
+{
+  "healing": "PASS",
+  "circuit_breaker": "PASS",
+  "token_tracking": "PASS",
+  "pii_stripping": "PASS",
+  "injection_guard": "PASS",
+  "sensitive_gate": "PASS",
+  "agent_loop": "PASS",
+  "langchain": "PASS",
+  "crewai": "PASS",
+  "total_checks": 9,
+  "passed": 9,
+  "failed": 0,
+  "details": {
+    "healing": {
+      "HEAL_TRIGGERED": true,
+      "HEAL_REQUEST_SENT": true,
+      "PATCH_RECEIVED": true,
+      "PATCH_APPLIED": true,
+      "RETRY_EXECUTED": true,
+      "RECOVERY_SUCCESS": true
+    },
+    "circuit_breaker": {
+      "CIRCUIT_BREAKER_TRIGGERED": true
+    },
+    "token_tracking": {
+      "TOKEN_USAGE_TRACKED": true,
+      "TOKEN_WARNING_TRIGGERED": true
+    },
+    "pii_stripping": {
+      "PII_STRIPPED": true
+    },
+    "injection_guard": {
+      "INJECTION_BLOCKED": true
+    },
+    "sensitive_gate": {
+      "SENSITIVE_GATE_TRIGGERED": true,
+      "OPERATION_BLOCKED": true
+    },
+    "agent_loop": {
+      "AGENT_COMPLETED_SUCCESSFULLY": true,
+      "CLOUD_PATCH_RECEIVED": true
+    },
+    "langchain": {
+      "LANGCHAIN_HEAL_SUCCESS": true,
+      "CLOUD_PATCH_RECEIVED": true
+    },
+    "crewai": {
+      "CREWAI_HEAL_SUCCESS": true,
+      "CLOUD_PATCH_RECEIVED": true
+    }
+  }
+}

@@ -1,0 +1,8 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Temprd icon</title>
+  <desc id="desc">Temprd geometric reliability mark.</desc>
+  <rect width="128" height="128" rx="30" fill="#05070D"/>
+  <path d="M64 22L102 44V84L64 106L26 84V44L64 22Z" stroke="#6EE7F9" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M64 22V106M26 44L102 84M102 44L26 84" stroke="#A78BFA" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="64" cy="64" r="10" fill="#F8FAFC"/>
+</svg>
