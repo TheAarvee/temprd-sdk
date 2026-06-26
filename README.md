@@ -20,9 +20,9 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@temprd/sdk"><img src="https://img.shields.io/npm/v/@temprd/sdk?style=flat-square&color=blue" alt="npm" /></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square" alt="license" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="license" /></a>
   <img src="https://img.shields.io/badge/types-TypeScript-3178C6?style=flat-square" alt="typescript" />
-  <img src="https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square" alt="node" />
+  <a href="https://docs.temprd.app"><img src="https://img.shields.io/badge/docs-temprd.app-blue?style=flat-square" alt="docs" /></a>
 </p>
 
 ---
