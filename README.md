@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://temprd.app/docs">Docs</a> &middot;
+  <a href="https://docs.temprd.app/">Docs</a> &middot;
   <a href="https://temprd.app/docs/quickstart">Quickstart</a> &middot;
   <a href="https://temprd.app">Dashboard</a> &middot;
   <a href="https://temprd.app/docs/benchmarks">Benchmarks</a> &middot;
@@ -41,7 +41,9 @@ runtime.
 | **Customer-provider inference** | Temprd automatically detects your configured AI provider and uses it to generate candidate repairs, which are validated before being retried. |
 | **Minimal integration** | Wrap a provider client once, then wrap tools that should recover automatically. |
 
----
+
+<img width="14232" height="9336" alt="Doc with without" src="https://github.com/user-attachments/assets/97582883-b51a-46d1-99f3-a5cf8b6af3ec" />
+
 
 ## Install
 
