@@ -4,8 +4,9 @@ import { RuntimeTelemetry } from "../telemetry/runtime-telemetry";
 import type { HealPatch, HealRequest, HealingContext, temprdConfig, temprdMessage } from "../types";
 import { CloudClient } from "./cloud-client";
 import { detectProviderName, executeHealingJob } from "./provider-inference";
+import { messageContentToText } from "../utils/message-content";
 
-const SDK_VERSION = "0.1.0";
+const SDK_VERSION = "0.1.1";
 const VALIDATION_CONFIDENCE_THRESHOLD = 0.8;
 
 export class HealPipeline {
@@ -27,14 +28,18 @@ export class HealPipeline {
   ): Promise<HealPatch> {
     const telemetry = new RuntimeTelemetry(this.config, session_id);
     const redactedFields = new Set<string>();
-    const message_history = messages.map((message) => {
-      const scan = this.piiStripper.strip(message.content);
+    const maxMessages = this.config.max_healing_messages ?? 4;
+    const maxChars = this.config.max_healing_content_chars ?? 800;
+    const message_history = messages.slice(-maxMessages).map((message) => {
+      const scan = this.piiStripper.strip(
+        messageContentToText(message.content).slice(0, maxChars)
+      );
       for (const field of scan.redacted_fields) {
         redactedFields.add(field);
       }
       return {
         ...message,
-        content: scan.sanitized_content
+        content: messageContentToText(scan.sanitized_content)
       };
     });
 

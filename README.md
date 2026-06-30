@@ -1,36 +1,59 @@
 <p align="center">
   <picture>
-    <source srcset="temprd-sdk/assets/logo-dark.svg" media="(prefers-color-scheme: dark)">
-    <source srcset="temprd-sdk/assets/logo-light.svg" media="(prefers-color-scheme: light)">
+    <source srcset="assets/logo-dark.svg" media="(prefers-color-scheme: dark)">
+    <source srcset="assets/logo-light.svg" media="(prefers-color-scheme: light)">
+    <img src="assets/logo-light.svg" alt="Temprd" width="420" />
   </picture>
 </p>
 
-# Temprd SDK
+<p align="center">
+  <strong>Runtime reliability infrastructure for AI agents.</strong>
+</p>
 
-Runtime reliability infrastructure for AI agents.
+<p align="center">
+  <a href="https://temprd.app/docs">Docs</a> &middot;
+  <a href="https://temprd.app/docs/quickstart">Quickstart</a> &middot;
+  <a href="https://temprd.app">Dashboard</a> &middot;
+  <a href="https://temprd.app/docs/benchmarks">Benchmarks</a> &middot;
+  <a href="https://github.com/temprd/temprd-sdk/issues">Issues</a>
+</p>
 
-[![npm version](https://img.shields.io/npm/v/@temprd/sdk.svg)](https://www.npmjs.com/package/@temprd/sdk)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](./LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-ready-3178C6.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933.svg)](https://nodejs.org/)
+<p align="center">
+  <a href="https://www.npmjs.com/package/@temprd/sdk"><img src="https://img.shields.io/npm/v/@temprd/sdk?style=flat-square&color=blue" alt="npm" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square" alt="license" /></a>
+  <img src="https://img.shields.io/badge/types-TypeScript-3178C6?style=flat-square" alt="typescript" />
+  <img src="https://img.shields.io/badge/node-%3E%3D18-339933?style=flat-square" alt="node" />
+</p>
 
-## What is Temprd?
+---
 
-Temprd wraps AI clients and tools to make agents more reliable in production.
-It can repair recoverable tool failures, protect agent execution at runtime,
-and retry validated fixes with minimal integration. Healing uses the
-developer's configured LLM provider, while Temprd validates the final repair
-before it is applied.
+Temprd is an SDK for making AI agents survive production failures.
 
-## Installation
+It wraps AI clients and tools, detects runtime risks, repairs recoverable tool
+failures, validates fixes, and retries safely. Healing uses the developer's
+configured LLM provider, so provider credentials stay inside the customer
+runtime.
+
+| | |
+|---|---|
+| **Healing** | Repairs recoverable tool-call, payload, schema, response-shape, and structured-output failures. |
+| **Runtime protection** | Detects prompt injection, redacts PII, compresses context, tracks tokens, and trips circuit breakers. |
+| **Customer-provider inference** | Uses the developer's configured LLM for healing inference. Temprd validates before retry. |
+| **Minimal integration** | Wrap a provider client once, then wrap tools that should recover automatically. |
+
+---
+
+## Install
 
 ```bash
 npm install @temprd/sdk
 ```
 
-## Quick Start
+---
 
-```ts
+## Quickstart
+
+```typescript
 import "dotenv/config";
 import OpenAI from "openai";
 import { Temprd } from "@temprd/sdk";
@@ -73,21 +96,50 @@ const user = await getUserTool({ id: 123 });
 console.log(user);
 ```
 
+LangChain models are wrapped without changing their interface:
+
+```typescript
+import { ChatGroq } from "@langchain/groq";
+import { Temprd } from "@temprd/sdk";
+
+const model = Temprd.wrap_client(new ChatGroq({
+  apiKey: process.env.GROQ_API_KEY!,
+  model: "openai/gpt-oss-120b"
+}), {
+  api_key: process.env.TEMPRD_API_KEY!
+});
+
+const search = Temprd.wrapTool("search", searchWeb);
+```
+
+`wrapTool()` automatically inherits the configuration registered by
+`wrap_client()`. Schemas are optional; Temprd can infer common argument renames
+from the observed error and failed call without an extra model request.
+
+Temprd uses `https://api.temprd.app` by default. Set `cloud_api_url` only for
+self-hosted, staging, or local development.
+
+---
+
 ## Features
 
-- [x] Automatic tool-call healing
-- [x] Tool schema drift recovery
-- [x] Payload repair
-- [x] Structured output recovery
-- [x] Runtime protection
-- [x] Prompt injection protection
-- [x] PII redaction
-- [x] Circuit breakers
-- [x] Token budgeting
-- [x] Sensitive operation governance
-- [x] Runtime telemetry
+| Capability | Status |
+|---|---|
+| Automatic tool-call healing | Supported |
+| Tool schema drift recovery | Supported |
+| Payload repair | Supported |
+| Structured output recovery | Supported |
+| Prompt injection protection | Supported |
+| PII redaction | Supported |
+| Context compression | Supported |
+| Circuit breakers | Supported |
+| Token budgeting | Supported |
+| Sensitive operation governance | Supported |
+| Runtime telemetry | Supported |
 
-## How Temprd Works
+---
+
+## How Temprd works
 
 ```text
 Agent
@@ -112,70 +164,109 @@ Temprd Validation
   |
   v
 Retry
+  |
+  v
+Success
 ```
 
-Provider API keys stay inside the customer runtime. Temprd Cloud validates the
-repair before the SDK retries the failed operation.
+Provider API keys are never sent to Temprd Cloud. The SDK executes healing jobs
+with the customer's provider client, then Temprd validates the candidate repair
+before the SDK retries.
+
+---
 
 ## Core APIs
 
-### `Temprd.wrap_client(client, config)`
+<table>
+<tr>
+<td width="50%" valign="top">
 
-Wraps an AI provider client and enables runtime protection, model capture,
-token tracking, circuit breakers, telemetry, and SDK-wide configuration.
+### `Temprd.wrap_client()`
 
-### `Temprd.wrapTool(name, tool, options?)`
+Wraps an AI provider client and stores SDK-wide configuration.
 
-Wraps a tool function so Temprd can detect failures, request a validated
-repair, apply the patch, and retry when recovery is possible.
+Use it to enable runtime protection, model capture, token tracking, circuit
+breakers, telemetry, and healing configuration.
 
-See the documentation for the full API reference and configuration options.
+</td>
+<td width="50%" valign="top">
 
-## Runtime Protection
+### `Temprd.wrapTool()`
 
-Runtime protection runs locally in the SDK and does not require additional LLM
-calls. Temprd can detect or enforce:
+Wraps a tool function so Temprd can catch failures, request a validated repair,
+apply the patch, and retry when recovery is possible.
 
-- Prompt injection detection
-- PII redaction
-- Context compression
-- Token tracking
-- Circuit breakers
-- Sensitive operation governance
+</td>
+</tr>
+</table>
 
-## AI-Powered Healing
+Full API reference: https://temprd.app/docs/api-reference
 
-Temprd can repair common production failures such as:
+---
 
-- Tool schema drift
-- Payload mismatches
-- Response shape drift
-- Structured output issues
-- Third-party integration changes
+## Runtime protection
 
-Healing uses the customer's configured LLM provider. Temprd validates the
-candidate repair before the SDK retries the failed call.
+Runtime protection runs locally in the SDK and does not require extra model
+calls.
+
+| Protection | What Temprd does |
+|---|---|
+| Prompt injection | Detects direct and indirect instruction override attempts. |
+| PII redaction | Redacts sensitive data before outbound model or healing calls. |
+| Context compression | Compresses long histories while preserving recent turns. |
+| Token tracking | Tracks usage against developer-defined budgets. |
+| Circuit breakers | Stops repeated failures and retry cascades. |
+| Sensitive operations | Requires developer approval for configured high-risk tools. |
+
+---
+
+## AI-powered healing
+
+Temprd repairs common production failures that break agent workflows:
+
+| Failure class | Example |
+|---|---|
+| Tool schema drift | `user_id` becomes `id` |
+| Payload mismatch | Nested or wrapped arguments need restructuring |
+| Response shape drift | API response fields move or change shape |
+| Structured output issues | Model output no longer matches the expected schema |
+| Third-party integration changes | External APIs deprecate methods or fields |
+
+Every repair is validated before retry. If Temprd cannot produce an accepted
+patch, the original failure is surfaced instead of applying an unsafe fix.
+
+---
 
 ## Benchmarks
 
-Temprd is evaluated with recovery and runtime protection benchmarks:
+Temprd is evaluated with recovery and runtime protection benchmark suites.
 
-- Recovery Benchmarks: 100 synthetic production-inspired failures
-- Production Incident Benchmark: real-world API and integration drift cases
-- Runtime Protection Benchmarks: prompt injection, PII, circuit breakers,
-  token budgeting, context compression, and sensitive operation governance
+| Suite | Coverage |
+|---|---|
+| Recovery Benchmarks | 100 synthetic production-inspired failures |
+| Production Incident Benchmark | Real-world API and integration drift cases |
+| Runtime Protection Benchmarks | Prompt injection, PII, context, token, circuit breaker, and governance cases |
 
-See the documentation for complete benchmark methodology and reports.
+Complete methodology and reports: https://temprd.app/docs/benchmarks
 
-## Documentation
+---
+
+## Links
 
 - Documentation: https://temprd.app/docs
+- Quickstart: https://temprd.app/docs/quickstart
 - Dashboard: https://temprd.app
 - Benchmarks: https://temprd.app/docs/benchmarks
 - Examples: https://temprd.app/docs/examples
 - API Reference: https://temprd.app/docs/api-reference
 - GitHub Issues: https://github.com/temprd/temprd-sdk/issues
 
+---
+
 ## License
 
 MIT. See [LICENSE](./LICENSE).
+
+<p align="center">
+  <strong>Build agents that recover instead of stopping.</strong>
+</p>

@@ -1,4 +1,5 @@
 import type { temprdMessage } from "../types";
+import { messageContentToText } from "../utils/message-content";
 
 export const MAX_MESSAGES_BEFORE_COMPRESS = 20;
 export const MESSAGES_TO_KEEP_RECENT = 6;
@@ -19,7 +20,7 @@ export class ContextCompressor {
     const olderMessages = nonSystemMessages.slice(0, -MESSAGES_TO_KEEP_RECENT);
     const summary = olderMessages
       .filter((message) => message.role === "tool" || message.role === "assistant")
-      .map((message) => `${message.role.toUpperCase()}: ${message.content.slice(0, 200)}`)
+      .map((message) => `${message.role.toUpperCase()}: ${messageContentToText(message.content).slice(0, 200)}`)
       .join("\n");
 
     return [

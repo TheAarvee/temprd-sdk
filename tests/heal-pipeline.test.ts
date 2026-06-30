@@ -74,7 +74,7 @@ describe("HealPipeline", () => {
 
     expect(createJob.mock.calls[0][0]).toEqual(
       expect.objectContaining({
-        sdk_version: "0.1.0",
+        sdk_version: "0.1.1",
         tool_name: "get_user",
         expected_fields: ["id", "email"],
         previous_successful_call: { tool_name: "get_user", arguments: { id: 123 } },
@@ -82,6 +82,38 @@ describe("HealPipeline", () => {
         error_response_body: { error: "Expected field id" }
       })
     );
+  });
+
+  it("bounds healing history to reduce provider input tokens", async () => {
+    setRuntimeProviderClient({
+      chat: { completions: { create: jest.fn().mockResolvedValue({ choices: [{ message: { content: "{}" } }] }) } }
+    });
+    setRuntimeProviderModel("gpt-4.1-mini");
+    const createJob = jest.fn().mockResolvedValue({
+      job_id: "hj_123",
+      job_version: "tool_repair_v1",
+      model_messages: [],
+      output_schema: {},
+      signature: "sig"
+    });
+    const pipeline = new HealPipeline(
+      { api_key: "tk", max_healing_messages: 2, max_healing_content_chars: 20 },
+      {
+        createJob,
+        validateJob: jest.fn().mockResolvedValue({ status: "no_fix" })
+      } as never
+    );
+    const messages = Array.from({ length: 8 }, (_, index) => ({
+      role: "user" as const,
+      content: `${index}-${"x".repeat(100)}`
+    }));
+
+    await pipeline.heal("payload", "bad", messages, "session");
+
+    const history = createJob.mock.calls[0][0].message_history;
+    expect(history).toHaveLength(2);
+    expect(history[0].content).toHaveLength(20);
+    expect(history[0].content.startsWith("6-")).toBe(true);
   });
 
   it("fires on_heal callback on healed patch", async () => {

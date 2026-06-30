@@ -30,7 +30,7 @@ export async function executeHealingJob(
       model,
       messages: job.model_messages,
       temperature: 0.1,
-      max_tokens: 1000,
+      max_tokens: 500,
       response_format: { type: "json_object" }
     });
     debugLog(debug, "raw_model_response", { response });
@@ -53,7 +53,7 @@ export async function executeHealingJob(
       model,
       system,
       messages,
-      max_tokens: 1000,
+      max_tokens: 500,
       temperature: 0.1
     });
     debugLog(debug, "raw_model_response", { response });

@@ -10,6 +10,7 @@ import { RuntimeTelemetry } from "../telemetry/runtime-telemetry";
 import { hashMessages } from "../utils/hasher";
 import { Logger } from "../utils/logger";
 import { CircuitBreaker, CircuitBreakerOpenError } from "./circuit-breaker";
+import { classifyFailure } from "./failure-classifier";
 import { setRuntimeProviderModel } from "./runtime-config";
 import { TokenTracker } from "./token-tracker";
 
@@ -71,6 +72,16 @@ export class temprdProxy {
 
   wrap<T>(client: T): T {
     const maybeClient = client as ClientShape;
+    const nestedClient = (maybeClient as { client?: unknown }).client as ClientShape | undefined;
+    if (!maybeClient.chat?.completions?.create && nestedClient?.chat?.completions?.create) {
+      const wrappedProvider = this.wrap(nestedClient);
+      return new Proxy(maybeClient, {
+        get(target, prop, receiver) {
+          if (prop === "client") return wrappedProvider;
+          return Reflect.get(target, prop, receiver);
+        }
+      }) as T;
+    }
     if (!maybeClient.chat?.completions?.create) {
       return client;
     }
@@ -103,6 +114,12 @@ export class temprdProxy {
     });
 
     return proxy as T;
+  }
+
+  resolveProviderClient(client: unknown): unknown {
+    const candidate = client as { client?: unknown };
+    const nested = candidate?.client as ClientShape | undefined;
+    return nested?.chat?.completions?.create ? nested : client;
   }
 
   private async interceptCreate(originalCreate: CreateFunction, params: CreateParams): Promise<unknown> {
@@ -196,10 +213,34 @@ export class temprdProxy {
         throw error;
       }
 
+      const classification = classifyFailure(error);
+      if (classification.kind === "authentication") throw error;
+      const localPatch = this.inferLocalPayloadPatch(nextParams, error);
+      if (localPatch) {
+        this.config.on_heal?.(localPatch);
+        const repaired = await originalCreate(this.applyPatch(nextParams, localPatch));
+        this.trackResponseTokens(repaired);
+        return repaired;
+      }
+      if (classification.retryable) {
+        const maxRetries = this.config.max_retries ?? 2;
+        let lastError = error;
+        for (let attempt = 0; attempt < maxRetries; attempt += 1) {
+          await delay(classification.retryAfterMs ?? 500);
+          try {
+            return await originalCreate(nextParams);
+          } catch (retryError) {
+            lastError = retryError;
+            if (!classifyFailure(retryError).retryable) throw retryError;
+          }
+        }
+        throw lastError;
+      }
+
       return this.runHealPipeline(
         originalCreate,
         nextParams,
-        "tool_error",
+        classification.kind,
         error instanceof Error ? error.message : String(error),
         healingContext.failed_tool_call,
         undefined,
@@ -355,6 +396,34 @@ export class temprdProxy {
     }
 
     return params;
+  }
+
+  private inferLocalPayloadPatch(params: CreateParams, error: unknown): HealPatch | null {
+    const message = error instanceof Error ? error.message : String(error);
+    const match = message.match(
+      /expected\s+(?:field\s+)?["']?([A-Za-z0-9_.$-]+)["']?\s+but\s+received\s+["']?([A-Za-z0-9_.$-]+)["']?/i
+    );
+    if (!match) return null;
+    const [, expected, received] = match;
+    const toolArguments = this.isRecord(params.tool_arguments)
+      ? params.tool_arguments
+      : params;
+    if (!(received in toolArguments) || expected in toolArguments) return null;
+    const healedArguments = { ...toolArguments, [expected]: toolArguments[received] };
+    delete healedArguments[received];
+    const healed = this.isRecord(params.tool_arguments)
+      ? { ...params, tool_arguments: healedArguments }
+      : healedArguments;
+    return {
+      status: "healed",
+      patch: {
+        type: "payload",
+        original: params,
+        healed,
+        confidence: 0.99,
+        strategy: "observed_field_rename"
+      }
+    };
   }
 
   private trackResponseTokens(response: unknown): void {
@@ -533,4 +602,8 @@ export class temprdProxy {
     });
     return approved;
   }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

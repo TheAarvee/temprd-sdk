@@ -87,7 +87,7 @@ describe("public API", () => {
     expect(approval).toHaveBeenCalledWith("delete_record", ["user_123"]);
   });
 
-  it("heals a failed wrapped tool call, applies the patch, and retries", async () => {
+  it("repairs an observed field rename locally without model inference", async () => {
     const heal = jest.spyOn(HealPipeline.prototype, "heal").mockResolvedValue({
       status: "healed",
       patch: {
@@ -114,34 +114,7 @@ describe("public API", () => {
     expect(getUser).toHaveBeenCalledTimes(2);
     expect(getUser).toHaveBeenNthCalledWith(1, { user_id: 123 });
     expect(getUser).toHaveBeenNthCalledWith(2, { id: 123 });
-    expect(heal).toHaveBeenCalledWith(
-      "tool_error",
-      "Expected field id but received user_id",
-      expect.arrayContaining([
-        expect.objectContaining({
-          role: "tool",
-          name: "get_user"
-        })
-      ]),
-      expect.any(String),
-      {
-        tool_name: "get_user",
-        arguments: { user_id: 123 }
-      },
-      undefined,
-      expect.objectContaining({
-        tool_name: "get_user",
-        expected_fields: ["id"],
-        error_response_body: {
-          expected_field: "id",
-          received_field: "user_id"
-        },
-        failed_tool_call: {
-          tool_name: "get_user",
-          arguments: { user_id: 123 }
-        }
-      })
-    );
+    expect(heal).not.toHaveBeenCalled();
   });
 
   it("reuses wrap_client config for wrapped tool healing", async () => {
@@ -177,8 +150,29 @@ describe("public API", () => {
     const wrapped = Temprd.wrapTool("get_user", getUser);
 
     await expect(wrapped({ user_id: 123 })).resolves.toEqual({ id: 123, name: "John" });
-    expect(heal).toHaveBeenCalled();
+    expect(heal).not.toHaveBeenCalled();
     expect(getUser).toHaveBeenNthCalledWith(2, { id: 123 });
+  });
+
+  it("wraps a LangChain-style model through its nested provider client", async () => {
+    const create = jest.fn().mockResolvedValue({ id: "ok" });
+    const model = {
+      client: { chat: { completions: { create } } },
+      async invoke(params: unknown) {
+        return this.client.chat.completions.create(params as never);
+      }
+    };
+    const wrapped = Temprd.wrap_client(model, { api_key: "tk" });
+
+    await wrapped.invoke({
+      model: "groq-model",
+      messages: [{ role: "user", content: [{ type: "text", text: "hello" }] }]
+    });
+
+    expect(create).toHaveBeenCalled();
+    expect(create.mock.calls[0][0].messages[0].content).toEqual([
+      { type: "text", text: "hello" }
+    ]);
   });
 
   it("keeps propagating wrapped tool errors when no healing config is provided", async () => {

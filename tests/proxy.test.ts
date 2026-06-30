@@ -49,6 +49,55 @@ describe("temprd proxy", () => {
     );
   });
 
+  it("preserves null and multimodal content while sanitizing text parts", async () => {
+    const create = jest.fn().mockResolvedValue({ id: "ok" });
+    const client = temprd.wrap_client(makeClient(create), { api_key: "tk" });
+
+    await client.chat.completions.create({
+      messages: [
+        { role: "assistant", content: null },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "email me at test@example.com" },
+            { type: "image_url", image_url: { url: "https://example.test/image.png" } }
+          ]
+        }
+      ]
+    } as never);
+
+    expect(create.mock.calls[0][0].messages[0].content).toBeNull();
+    expect(create.mock.calls[0][0].messages[1].content).toEqual([
+      { type: "text", text: "email me at [REDACTED:EMAIL]" },
+      { type: "image_url", image_url: { url: "https://example.test/image.png" } }
+    ]);
+  });
+
+  it("retries rate limits without spending a healing call", async () => {
+    const error = Object.assign(new Error("429 rate limit; try again in 0s"), { status: 429 });
+    const create = jest.fn().mockRejectedValueOnce(error).mockResolvedValueOnce({ id: "ok" });
+    const heal = jest.spyOn(HealPipeline.prototype, "heal");
+    const client = temprd.wrap_client(makeClient(create), { api_key: "tk", max_retries: 1 });
+
+    await expect(
+      client.chat.completions.create({ messages: [{ role: "user", content: "hello" }] })
+    ).resolves.toEqual({ id: "ok" });
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(heal).not.toHaveBeenCalled();
+  });
+
+  it("surfaces authentication failures without attempting healing", async () => {
+    const error = Object.assign(new Error("invalid API key"), { status: 401 });
+    const create = jest.fn().mockRejectedValue(error);
+    const heal = jest.spyOn(HealPipeline.prototype, "heal");
+    const client = temprd.wrap_client(makeClient(create), { api_key: "tk" });
+
+    await expect(
+      client.chat.completions.create({ messages: [{ role: "user", content: "hello" }] })
+    ).rejects.toBe(error);
+    expect(heal).not.toHaveBeenCalled();
+  });
+
   it("trips circuit breaker after 3 failures", async () => {
     jest.spyOn(HealPipeline.prototype, "heal").mockResolvedValue({ status: "no_fix" });
     const on_circuit_break = jest.fn();
@@ -62,7 +111,7 @@ describe("temprd proxy", () => {
     await expect(client.chat.completions.create({ messages: [{ role: "user", content: "one" }] })).rejects.toThrow("temprd: Heal failed");
     await expect(client.chat.completions.create({ messages: [{ role: "user", content: "two" }] })).rejects.toThrow("temprd: Heal failed");
     await expect(client.chat.completions.create({ messages: [{ role: "user", content: "three" }] })).rejects.toBeInstanceOf(CircuitBreakerOpenError);
-    expect(on_circuit_break).toHaveBeenCalledWith("tool_error");
+    expect(on_circuit_break).toHaveBeenCalledWith("unknown");
   });
 
   it("throws when token budget is exceeded", async () => {
@@ -153,7 +202,7 @@ describe("temprd proxy", () => {
     ).rejects.toThrow("temprd: Heal failed");
 
     expect(heal).toHaveBeenLastCalledWith(
-      "tool_error",
+      "schema_drift",
       "Expected field id but received user_id",
       [{ role: "user", content: "get user" }],
       expect.any(String),

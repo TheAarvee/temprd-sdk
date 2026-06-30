@@ -1,4 +1,5 @@
 import type { InjectionScanResult, temprdMessage } from "../types";
+import { mapMessageText } from "../utils/message-content";
 
 const INJECTION_PATTERNS: RegExp[] = [
   /ignore\s+(all\s+)?instructions/i,
@@ -28,24 +29,26 @@ export class InjectionGuard {
         return { ...message };
       }
 
-      let content = message.content;
-      for (const pattern of ENCODED_CHARACTER_PATTERNS) {
-        pattern.lastIndex = 0;
-        if (pattern.test(content)) {
-          detections.push(pattern.toString());
+      const content = mapMessageText(message.content, (input) => {
+        let text = input;
+        for (const pattern of ENCODED_CHARACTER_PATTERNS) {
           pattern.lastIndex = 0;
-          content = content.replace(pattern, "");
+          if (pattern.test(text)) {
+            detections.push(pattern.toString());
+            pattern.lastIndex = 0;
+            text = text.replace(pattern, "");
+          }
         }
-      }
-
-      for (const pattern of INJECTION_PATTERNS) {
-        pattern.lastIndex = 0;
-        if (pattern.test(content)) {
-          detections.push(pattern.toString());
+        for (const pattern of INJECTION_PATTERNS) {
           pattern.lastIndex = 0;
-          content = content.replace(pattern, BLOCKED);
+          if (pattern.test(text)) {
+            detections.push(pattern.toString());
+            pattern.lastIndex = 0;
+            text = text.replace(pattern, BLOCKED);
+          }
         }
-      }
+        return text;
+      });
 
       return { ...message, content };
     });

@@ -9,6 +9,7 @@ import { ResponseValidator } from "./guards/response-validator";
 import { SensitivityGate } from "./governance/sensitivity-gate";
 import { HealPipeline } from "./healers/heal-pipeline";
 import { RuntimeTelemetry } from "./telemetry/runtime-telemetry";
+import { classifyFailure } from "./core/failure-classifier";
 import type {
   HealPatch,
   HealingContext,
@@ -21,8 +22,8 @@ import type {
 export class Temprd {
   static wrap_client<T>(client: T, config: TemprdConfig): T {
     setRuntimeConfig(config);
-    setRuntimeProviderClient(client);
     const proxy = new temprdProxy(config);
+    setRuntimeProviderClient(proxy.resolveProviderClient(client));
     return proxy.wrap(client) as T;
   }
 
@@ -76,6 +77,29 @@ export class Temprd {
       try {
         result = await tool(...args);
       } catch (error) {
+        const localPatch = this.inferLocalArgumentPatch(args, error);
+        if (localPatch) {
+          normalizedOptions.config?.on_heal?.(localPatch);
+          return await tool(...this.applyToolPatch(args, localPatch));
+        }
+
+        const classification = classifyFailure(error);
+        if (classification.kind === "authentication") throw error;
+        if (classification.retryable) {
+          let lastError = error;
+          for (let attempt = 0; attempt < (normalizedOptions.config?.max_retries ?? 2); attempt += 1) {
+            await new Promise((resolve) =>
+              setTimeout(resolve, classification.retryAfterMs ?? 500)
+            );
+            try {
+              return await tool(...args);
+            } catch (retryError) {
+              lastError = retryError;
+              if (!classifyFailure(retryError).retryable) throw retryError;
+            }
+          }
+          throw lastError;
+        }
         return await this.healToolFailure(
           tool_name,
           tool,
@@ -127,18 +151,7 @@ export class Temprd {
     const patch = await healPipeline.heal(
       failedResponse === undefined ? "tool_error" : "silent_200_failure",
       errorMessage,
-      [
-        {
-          role: "tool",
-          name: tool_name,
-          content: JSON.stringify({
-            tool_name,
-            arguments: args,
-            error: errorMessage,
-            failed_response: failedResponse
-          })
-        }
-      ],
+      [],
       sessionId,
       context.failed_tool_call,
       failedResponse,
@@ -204,6 +217,30 @@ export class Temprd {
     return {
       expected: match[1],
       received: match[2]
+    };
+  }
+
+  private static inferLocalArgumentPatch<TArgs extends unknown[]>(
+    args: TArgs,
+    error: unknown
+  ): HealPatch | null {
+    const mismatch = this.extractFieldMismatch(
+      error instanceof Error ? error.message : String(error)
+    );
+    if (!mismatch || args.length !== 1 || !this.isRecord(args[0])) return null;
+    const original = args[0];
+    if (!(mismatch.received in original) || mismatch.expected in original) return null;
+    const healed = { ...original, [mismatch.expected]: original[mismatch.received] };
+    delete healed[mismatch.received];
+    return {
+      status: "healed",
+      patch: {
+        type: "tool_call",
+        original,
+        healed,
+        confidence: 0.99,
+        strategy: "observed_field_rename"
+      }
     };
   }
 
@@ -297,6 +334,10 @@ export class Temprd {
     const configKeys: Array<keyof temprdConfig> = [
       "api_key",
       "cloud_api_url",
+      "cloud_timeout_ms",
+      "max_retries",
+      "max_healing_messages",
+      "max_healing_content_chars",
       "token_budget",
       "circuit_breaker_threshold",
       "sensitive_operations",

@@ -14,8 +14,7 @@
   "details": {
     "healing": {
       "HEAL_TRIGGERED": true,
-      "HEAL_REQUEST_SENT": true,
-      "PATCH_RECEIVED": true,
+      "REPAIR_INFERRED_FROM_FAILURE": true,
       "PATCH_APPLIED": true,
       "RETRY_EXECUTED": true,
       "RECOVERY_SUCCESS": true
@@ -39,15 +38,15 @@
     },
     "agent_loop": {
       "AGENT_COMPLETED_SUCCESSFULLY": true,
-      "CLOUD_PATCH_RECEIVED": true
+      "REPAIR_APPLIED_WITHOUT_HINT": true
     },
     "langchain": {
       "LANGCHAIN_HEAL_SUCCESS": true,
-      "CLOUD_PATCH_RECEIVED": true
+      "REPAIR_APPLIED_WITHOUT_HINT": true
     },
     "crewai": {
       "CREWAI_HEAL_SUCCESS": true,
-      "CLOUD_PATCH_RECEIVED": true
+      "REPAIR_APPLIED_WITHOUT_HINT": true
     }
   }
 }

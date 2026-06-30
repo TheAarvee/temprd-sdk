@@ -1,6 +1,6 @@
 export interface temprdMessage {
   role: "system" | "user" | "assistant" | "tool";
-  content: string;
+  content: unknown;
   tool_call_id?: string;
   name?: string;
 }
@@ -128,6 +128,9 @@ export interface temprdConfig {
    */
   cloud_api_url?: string;
   cloud_timeout_ms?: number;
+  max_retries?: number;
+  max_healing_messages?: number;
+  max_healing_content_chars?: number;
   token_budget?: number;
   circuit_breaker_threshold?: number;
   sensitive_operations?: string[];
@@ -171,5 +174,5 @@ export interface InjectionScanResult {
 export interface PIIScanResult {
   clean: boolean;
   redacted_fields: string[];
-  sanitized_content: string;
+  sanitized_content: unknown;
 }

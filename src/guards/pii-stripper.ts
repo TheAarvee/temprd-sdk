@@ -1,4 +1,5 @@
 import type { PIIScanResult } from "../types";
+import { mapMessageText } from "../utils/message-content";
 
 const PII_PATTERNS: Array<{ field: string; pattern: RegExp; replacement: string }> = [
   { field: "credit_card", pattern: /\b(?:\d[ -]?){13,16}\b/g, replacement: "[REDACTED:CARD]" },
@@ -31,19 +32,18 @@ const PII_PATTERNS: Array<{ field: string; pattern: RegExp; replacement: string 
 ];
 
 export class PIIStripper {
-  strip(content: string): PIIScanResult {
+  strip(content: unknown): PIIScanResult {
     const redacted_fields: string[] = [];
-    let sanitized_content = content;
-
-    for (const { field, pattern, replacement } of PII_PATTERNS) {
-      pattern.lastIndex = 0;
-      if (pattern.test(sanitized_content)) {
-        redacted_fields.push(field);
+    const sanitized_content = mapMessageText(content, (input) => {
+      let text = input;
+      for (const { field, pattern, replacement } of PII_PATTERNS) {
+        pattern.lastIndex = 0;
+        if (pattern.test(text) && !redacted_fields.includes(field)) redacted_fields.push(field);
+        pattern.lastIndex = 0;
+        text = text.replace(pattern, replacement);
       }
-      pattern.lastIndex = 0;
-      sanitized_content = sanitized_content.replace(pattern, replacement);
-      pattern.lastIndex = 0;
-    }
+      return text;
+    });
 
     return {
       clean: redacted_fields.length === 0,

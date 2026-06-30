@@ -1,17 +1,16 @@
 {
   "name": "@temprd/sdk",
-  "version": "0.1.0",
-  "description": "Universal reliability layer for AI agents",
+  "version": "0.1.1",
+  "description": "Runtime reliability infrastructure for AI agents.",
   "license": "MIT",
   "author": "Temprd",
   "homepage": "https://temprd.app",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/temprd/temprd-sdk.git"
+    "url": "git+https://github.com/TheAarvee/temprd-sdk.git"
   },
   "bugs": {
-    "email": "support@temprd.app",
-    "url": "https://temprd.app"
+    "url": "https://github.com/TheAarvee/temprd-sdk/issues"
   },
   "keywords": [
     "ai",
@@ -21,7 +20,9 @@
     "tool-calling",
     "healing",
     "runtime-protection",
-    "temprd"
+    "temprd",
+    "middleware",
+    "typescript"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -32,14 +33,16 @@
   "files": [
     "dist/**/*",
     "README.md",
-    "LICENSE",
-    ".env.example"
+    "LICENSE"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "require": "./dist/index.js"
-    }
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"

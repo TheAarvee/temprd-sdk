@@ -89,15 +89,13 @@ async function runHealingTest(cloud: FakeCloud): Promise<void> {
   const client = temprd.wrap_client(rawClient, configFor(cloud));
   const result = await client.chat.completions.create(getBrokenGetUserParams());
 
-  const healRequestSent = cloud.requests.some((request) => request.error_type === "tool_error");
   const retryExecuted = rawClient.calls === 2;
   const patchApplied = rawClient.receivedParams[1]?.tool_arguments?.id === 123;
   const recoverySuccess = isUserResult(result, 123);
 
   assertScenario("healing", {
     HEAL_TRIGGERED: rawClient.calls > 1,
-    HEAL_REQUEST_SENT: healRequestSent,
-    PATCH_RECEIVED: healRequestSent,
+    REPAIR_INFERRED_FROM_FAILURE: patchApplied,
     PATCH_APPLIED: patchApplied,
     RETRY_EXECUTED: retryExecuted,
     RECOVERY_SUCCESS: recoverySuccess
@@ -157,7 +155,6 @@ async function runTokenTrackingTest(cloud: FakeCloud): Promise<void> {
 }
 
 async function runPiiStrippingTest(cloud: FakeCloud): Promise<void> {
-  const startCount = cloud.requests.length;
   const rawClient = new FakeOpenAIClient();
   const client = temprd.wrap_client(rawClient, configFor(cloud));
 
@@ -175,8 +172,8 @@ async function runPiiStrippingTest(cloud: FakeCloud): Promise<void> {
     // The fake cloud returns no_fix for unstableTool; only the outbound request matters here.
   }
 
-  const request = cloud.requests.slice(startCount).at(-1);
-  const content = request?.message_history[0]?.content ?? "";
+  const rawContent = rawClient.receivedParams[0]?.messages?.[0]?.content;
+  const content = typeof rawContent === "string" ? rawContent : JSON.stringify(rawContent ?? "");
   assertScenario("pii_stripping", {
     PII_STRIPPED:
       content.includes("[REDACTED:EMAIL]") &&
@@ -231,7 +228,6 @@ async function runSensitiveGateTest(): Promise<void> {
 }
 
 async function runAgentLoopTest(cloud: FakeCloud): Promise<void> {
-  const startCount = cloud.responses.length;
   const rawClient = new FakeOpenAIClient();
   const client = temprd.wrap_client(rawClient, configFor(cloud));
   const agent = new FakeAgent(client);
@@ -241,12 +237,11 @@ async function runAgentLoopTest(cloud: FakeCloud): Promise<void> {
 
   assertScenario("agent_loop", {
     AGENT_COMPLETED_SUCCESSFULLY: result.completed && result.result.data.id === 123,
-    CLOUD_PATCH_RECEIVED: cloud.responses.slice(startCount).some(isHealedResponse)
+    REPAIR_APPLIED_WITHOUT_HINT: rawClient.receivedParams.at(-1)?.tool_arguments?.id === 123
   });
 }
 
 async function runLangChainCompatibilityTest(cloud: FakeCloud): Promise<void> {
-  const startCount = cloud.responses.length;
   const rawClient = new FakeOpenAIClient();
   const client = temprd.wrap_client(rawClient, configFor(cloud));
   const langChainTool = {
@@ -263,12 +258,11 @@ async function runLangChainCompatibilityTest(cloud: FakeCloud): Promise<void> {
 
   assertScenario("langchain", {
     LANGCHAIN_HEAL_SUCCESS: isUserResult(result, 123),
-    CLOUD_PATCH_RECEIVED: cloud.responses.slice(startCount).some(isHealedResponse)
+    REPAIR_APPLIED_WITHOUT_HINT: rawClient.receivedParams.at(-1)?.tool_arguments?.id === 123
   });
 }
 
 async function runCrewAiCompatibilityTest(cloud: FakeCloud): Promise<void> {
-  const startCount = cloud.responses.length;
   const rawClient = new FakeOpenAIClient();
   const client = temprd.wrap_client(rawClient, configFor(cloud));
   const crewAiTool = {
@@ -285,7 +279,7 @@ async function runCrewAiCompatibilityTest(cloud: FakeCloud): Promise<void> {
 
   assertScenario("crewai", {
     CREWAI_HEAL_SUCCESS: isUserResult(result, 123),
-    CLOUD_PATCH_RECEIVED: cloud.responses.slice(startCount).some(isHealedResponse)
+    REPAIR_APPLIED_WITHOUT_HINT: rawClient.receivedParams.at(-1)?.tool_arguments?.id === 123
   });
 }
 
