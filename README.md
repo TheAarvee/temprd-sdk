@@ -202,20 +202,6 @@ Temprd is evaluated with recovery and runtime protection benchmark suites.
 | Production Incident Benchmark | Real-world API and integration drift cases |
 | Runtime Protection Benchmarks | Prompt injection, PII, context, token, circuit breaker, and governance cases |
 
-Complete methodology and reports: https://temprd.app/docs/benchmarks
-
----
-
-## Links
-
-- Documentation: https://temprd.app/docs
-- Quickstart: https://temprd.app/docs/quickstart
-- Dashboard: https://temprd.app
-- Benchmarks: https://temprd.app/docs/benchmarks
-- Examples: https://temprd.app/docs/examples
-- API Reference: https://temprd.app/docs/api-reference
-- GitHub Issues: https://github.com/temprd/temprd-sdk/issues
-
 ---
 
 ## License
