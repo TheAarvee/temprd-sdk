@@ -155,8 +155,6 @@ apply the patch, and retry when recovery is possible.
 </tr>
 </table>
 
-Full API reference: https://temprd.app/docs/api-reference
-
 ---
 
 ## Runtime protection
