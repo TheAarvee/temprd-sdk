@@ -23,6 +23,8 @@ and retry validated fixes with minimal integration. Healing uses the
 developer's configured LLM provider, while Temprd validates the final repair
 before it is applied.
 
+<img width="14232" height="9336" alt="Doc with without" src="https://github.com/user-attachments/assets/36af3b23-87bc-4f4e-a885-f05e58a825c9" />
+
 ## Installation
 
 ```bash
