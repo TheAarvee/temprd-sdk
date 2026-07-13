@@ -6,34 +6,39 @@
   </picture>
 </p>
 
-# Temprd SDK
+<div align="center">
 
-Runtime reliability infrastructure for AI agents.
+**Runtime reliability infrastructure for AI agents.**
 
-[![npm version](https://img.shields.io/npm/v/@temprd/sdk.svg)](https://www.npmjs.com/package/@temprd/sdk)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](./LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-ready-3178C6.svg)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-%3E%3D18-339933.svg)](https://nodejs.org/)
+![npm Version](https://www.shieldcn.dev/npm/@temprd/sdk.svg?variant=secondary&size=sm&color=c50000)
+![TypeScript](https://www.shieldcn.dev/badge/Language-TypeScript-3178C6.svg?logo=typescript&variant=branded&size=sm&color=166eff)
+[![badge](https://shieldcn.dev/badge/Node.js-abcde3.svg?logo=nodedotjs&color=10bf2f&valueColor=115809&labelTextColor=115809)](https://nodejs.org/)
+![License](https://www.shieldcn.dev/github/license/TheAarvee/temprd-sdk.svg?variant=ghost&size=sm&color=000000&labelColor=505051&valueColor=ffffff)
 
-## What is Temprd?
+</div>
 
-Temprd wraps AI clients and tools to make agents more reliable in production.
-It can repair recoverable tool failures, protect agent execution at runtime,
-and retry validated fixes with minimal integration. Healing uses the
-developer's configured LLM provider, while Temprd validates the final repair
-before it is applied.
+##
+
+
+Temprd wraps AI clients and tools to make agents more reliable in production. It can repair recoverable tool failures, protect agent execution at runtime, and retry validated fixes with minimal integration.
+
+Self-Healing uses the developer's configured LLM provider, while Temprd validates the final repair before it is applied.
+
+**With Temprd vs Without Temprd**
 
 <img width="14232" height="9336" alt="Doc with without" src="https://github.com/user-attachments/assets/36af3b23-87bc-4f4e-a885-f05e58a825c9" />
 
-## Installation
+---
+
+## Make Agents Reliable
+
+### Install
 
 ```bash
 npm install @temprd/sdk
 ```
 
----
-
-## Quickstart
+### Quickstart
 
 ```typescript
 import "dotenv/config";
@@ -80,21 +85,23 @@ console.log(user);
 
 ## Features
 
-| Capability | Status |
-|---|---|
-| Automatic tool-call healing | Supported |
-| Tool schema drift recovery | Supported |
-| Payload repair | Supported |
-| Structured output recovery | Supported |
-| Prompt injection protection | Supported |
-| PII redaction | Supported |
-| Context compression | Supported |
-| Circuit breakers | Supported |
-| Token budgeting | Supported |
-| Sensitive operation governance | Supported |
-| Runtime telemetry | Supported |
+| Capability | Temprd | LangChain | CrewAI |
+|------------|:-------:|:---------:|:------:|
+| Automatic tool-call healing | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | - | - |
+| Tool schema drift recovery | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | - | - |
+| Payload repair | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | - | - |
+| Structured output recovery | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) |
+| Prompt injection protection | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | - | - |
+| PII redaction | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | - | - |
+| Context compression | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) |
+| Circuit breakers | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | - | - |
+| Token budgeting | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) |
+| Sensitive operation governance | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | - | - |
+| Runtime telemetry | ![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) | ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) |
 
----
+![badge](https://shieldcn.dev/badge/✓.svg?size=xs&theme=green) Supported   ![badge](https://shieldcn.dev/badge/~.svg?size=xs&theme=zinc) Partial     - Not supported
+
+
 
 ## How Temprd works
 
@@ -130,7 +137,7 @@ Provider API keys are never sent to Temprd Cloud. The SDK executes healing jobs
 with the customer's provider client, then Temprd validates the candidate repair
 before the SDK retries.
 
----
+
 
 ## Core APIs
 
@@ -157,7 +164,7 @@ apply the patch, and retry when recovery is possible.
 </tr>
 </table>
 
----
+
 
 ## Runtime protection
 
@@ -175,9 +182,14 @@ calls.
 
 ---
 
-## AI-powered healing
+## AI-powered Self-Healing
 
-Temprd repairs common production failures that break agent workflows:
+Temprd repairs common production failures that break agent workflows by folowing:  
+
+- Analyze
+- Recover
+- Validate
+- Retry
 
 | Failure class | Example |
 |---|---|
