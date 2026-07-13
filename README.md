@@ -11,7 +11,7 @@
 **Runtime reliability infrastructure for AI agents.**
 
 [![npm Version](https://www.shieldcn.dev/npm/@temprd/sdk.svg?variant=secondary&size=sm&color=c50000)](https://www.npmjs.com/package/@temprd/sdk)
-[![TypeScript](https://www.shieldcn.dev/badge/Language-TypeScript-3178C6.svg?logo=typescript&variant=branded&size=sm&color=166eff)]([https://nodejs.org/](https://www.typescriptlang.org/))
+[![TypeScript](https://www.shieldcn.dev/badge/Language-TypeScript-3178C6.svg?logo=typescript&variant=branded&size=sm&color=166eff)](https://www.typescriptlang.org/)
 [![badge](https://shieldcn.dev/badge/Node.js-abcde3.svg?logo=nodedotjs&color=10bf2f&valueColor=115809&labelTextColor=115809)](https://nodejs.org/)
 [![License](https://www.shieldcn.dev/github/license/TheAarvee/temprd-sdk.svg?variant=ghost&size=sm&color=000000&labelColor=505051&valueColor=ffffff)](https://github.com/TheAarvee/temprd-sdk?tab=MIT-1-ov-file)
 
